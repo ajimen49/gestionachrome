@@ -22,7 +22,7 @@ GestionaChrome permet:
   - **✔ Preferits** (adreces d’interès)
   - **✔ Historial de navegació**
   - **✔ Avatars / imatges de perfil**
--Eliminar perfils de Chrome d'una manera àgil.
+-Eliminar perfils de Chrome d'una manera àgil i segura.
 
 Evita també problemes habituals:
 - **❌ No copia extensions** (evita errors i comportaments estranys).
@@ -97,6 +97,16 @@ Si disposes de la versió `.exe`:
 4. Importa.
 
 👉 Els perfils apareixeran automàticament dins Chrome.
+
+## Eliminar perfils
+
+GestionaChrome també permet eliminar perfils de Google Chrome de manera ràpida i centralitzada.
+
+L'eliminació:
+- tanca Chrome automàticament si cal,
+- elimina el perfil seleccionat,
+- neteja la configuració interna de Chrome,
+- evita perfils "fantasma" o duplicats.
 
 ---
 
