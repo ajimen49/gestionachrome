@@ -3,7 +3,7 @@
 chcp 65001 >nul
 
 :: Titon sense caracters especials per evitar errors de lectura del fitxer
-title Llantzador ExportaChrome v3.1
+title Llantzador ExportaChrome v1.1
 
 setlocal enabledelayedexpansion
 
@@ -22,7 +22,7 @@ if not exist "%scriptName%" (
 )
 
 echo ==========================================
-echo       Iniciant ExportaChrome v3.1
+echo       Iniciant ExportaChrome v1.1
 echo ==========================================
 echo.
 echo S'esta obrint l'interficie...
