@@ -17,11 +17,12 @@ Sense complicacions tècniques ni configuracions avançades.
 GestionaChrome permet:
 
 - Exportar perfils seleccionats de Chrome a un fitxer `.zip`.
-- Importar aquests perfils en un altre ordinador.
+- Importar aquests perfils en un altre ordinador des d'un fitxer `.zip`
 - Recuperar:
   - **✔ Preferits** (adreces d’interès)
   - **✔ Historial de navegació**
   - **✔ Avatars / imatges de perfil**
+-Eliminar perfils de Chrome d'una manera àgil.
 
 Evita també problemes habituals:
 - **❌ No copia extensions** (evita errors i comportaments estranys).
