@@ -991,7 +991,7 @@ elseif ($script:mode -eq "delete") {
 # ------------------------------------------------------------
 
 $btnAll = New-Object Windows.Forms.Button
-$btnAll.Text = "Marcar tots"
+$btnAll.Text = "MARCA-HO TOT"
 $btnAll.Size = New-Object Drawing.Size(140,35)
 $btnAll.Location = New-Object Drawing.Point(20,320)
 
@@ -1010,7 +1010,7 @@ $btnAll.Add_Click({
 })
 
 $btnNone = New-Object Windows.Forms.Button
-$btnNone.Text = "Desmarcar tots"
+$btnNone.Text = "DESMARCA-HO TOT"
 $btnNone.Size = New-Object Drawing.Size(140,35)
 $btnNone.Location = New-Object Drawing.Point(170,320)
 
