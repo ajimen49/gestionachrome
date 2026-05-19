@@ -97,20 +97,92 @@ function Get-ChromeProfileFolders($basePath) {
     )
 }
 
-# Llegeix nom i correu del Local State (NOMÉS per a la UI, mai es copia)
+# Llegeix metadata visual i identificativa dels perfils.
+# - Local State: nom i correu
+# - Preferences: avatar, color i identitat visual
 function Get-ProfileMeta($basePath) {
+
     $meta   = @{}
     $lsPath = Join-Path $basePath "Local State"
-    if (-not (Test-Path $lsPath)) { return $meta }
-    try {
-        $ls = Get-Content $lsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        foreach ($prop in $ls.profile.info_cache.PSObject.Properties) {
-            $meta[$prop.Name] = @{
-                name  = if ($prop.Value.name)      { $prop.Value.name }      else { $prop.Name }
-                email = if ($prop.Value.user_name)  { $prop.Value.user_name } else { "" }
+
+    # ------------------------------------------------------------
+    # 1. LLEGIR LOCAL STATE
+    # ------------------------------------------------------------
+    $localStateProfiles = @{}
+
+    if (Test-Path $lsPath) {
+        try {
+            $ls = Get-Content $lsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+            foreach ($prop in $ls.profile.info_cache.PSObject.Properties) {
+
+                $localStateProfiles[$prop.Name] = @{
+                    name  = if ($prop.Value.name) { $prop.Value.name } else { $prop.Name }
+                    email = if ($prop.Value.user_name) { $prop.Value.user_name } else { "" }
+                }
             }
+        } catch {}
+    }
+
+    # ------------------------------------------------------------
+    # 2. LLEGIR PREFERENCES DE CADA PERFIL
+    # ------------------------------------------------------------
+    $profiles = Get-ChromeProfileFolders $basePath
+
+    foreach ($p in $profiles) {
+
+        $id       = $p.Name
+        $prefPath = Join-Path $p.FullName "Preferences"
+
+        $meta[$id] = @{
+            name                   = if ($localStateProfiles[$id]) { $localStateProfiles[$id].name } else { $id }
+            email                  = if ($localStateProfiles[$id]) { $localStateProfiles[$id].email } else { "" }
+
+            avatar_index           = 0
+            using_default_avatar   = $true
+            using_gaia_avatar      = $false
+            gaia_name              = ""
+            gaia_given_name        = ""
+            profile_color_seed     = 0
         }
-    } catch {}
+
+        if (Test-Path $prefPath) {
+
+            try {
+
+                $pref = Get-Content $prefPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+                if ($pref.profile) {
+
+                    if ($null -ne $pref.profile.avatar_index) {
+                        $meta[$id].avatar_index = $pref.profile.avatar_index
+                    }
+
+                    if ($null -ne $pref.profile.using_default_avatar) {
+                        $meta[$id].using_default_avatar = $pref.profile.using_default_avatar
+                    }
+
+                    if ($null -ne $pref.profile.using_gaia_avatar) {
+                        $meta[$id].using_gaia_avatar = $pref.profile.using_gaia_avatar
+                    }
+
+                    if ($pref.profile.gaia_name) {
+                        $meta[$id].gaia_name = $pref.profile.gaia_name
+                    }
+
+                    if ($pref.profile.gaia_given_name) {
+                        $meta[$id].gaia_given_name = $pref.profile.gaia_given_name
+                    }
+
+                    if ($null -ne $pref.profile.profile_color_seed) {
+                        $meta[$id].profile_color_seed = $pref.profile.profile_color_seed
+                    }
+                }
+
+            } catch {}
+        }
+    }
+
     return $meta
 }
 
@@ -154,6 +226,36 @@ function Merge-LocalStateMinim($importedMetaMap, $selectedIds, $destChromePath) 
         $ls | ConvertTo-Json -Depth 100 | Set-Content $lsDest -Encoding UTF8
     } catch {
         Write-Warning "No s'ha pogut actualitzar Local State: $($_.Exception.Message)"
+    }
+}
+
+# Genera un Preferences mínim i segur
+# sense extensions ni configuracions problemàtiques
+function New-MinimalPreferences($meta, $destProfilePath) {
+
+    $prefObj = @{
+        profile = @{
+            name                   = $meta.name
+            avatar_index           = $meta.avatar_index
+            using_default_avatar   = $meta.using_default_avatar
+            using_gaia_avatar      = $meta.using_gaia_avatar
+            gaia_name              = $meta.gaia_name
+            gaia_given_name        = $meta.gaia_given_name
+            profile_color_seed     = $meta.profile_color_seed
+        }
+    }
+
+    $prefPath = Join-Path $destProfilePath "Preferences"
+
+    try {
+
+        $prefObj |
+            ConvertTo-Json -Depth 10 |
+            Set-Content $prefPath -Encoding UTF8
+
+    } catch {
+
+        Write-Warning "No s'ha pogut generar Preferences per: $destProfilePath"
     }
 }
 
@@ -424,8 +526,15 @@ if ($script:mode -eq "export") {
             foreach ($row in $rows) {
                 $id = [string]$row.Cells["ID"].Value
                 $metaExport[$id] = @{
-                    name  = [string]$row.Cells["Name"].Value
-                    email = [string]$row.Cells["Email"].Value
+                    name                   = [string]$row.Cells["Name"].Value
+                    email                  = [string]$row.Cells["Email"].Value
+                
+                    avatar_index           = $meta[$id].avatar_index
+                    using_default_avatar   = $meta[$id].using_default_avatar
+                    using_gaia_avatar      = $meta[$id].using_gaia_avatar
+                    gaia_name              = $meta[$id].gaia_name
+                    gaia_given_name        = $meta[$id].gaia_given_name
+                    profile_color_seed     = $meta[$id].profile_color_seed
                 }
             }
             $metaExport | ConvertTo-Json -Depth 5 |
@@ -537,9 +646,18 @@ elseif ($script:mode -eq "import") {
         try {
             $raw = Get-Content $metaPath -Raw -Encoding UTF8 | ConvertFrom-Json
             foreach ($prop in $raw.PSObject.Properties) {
-                $importMeta[$prop.Name] = @{
-                    name  = if ($prop.Value.name)  { $prop.Value.name }  else { $prop.Name }
-                    email = if ($prop.Value.email) { $prop.Value.email } else { "" }
+               $importMeta[$prop.Name] = @{
+                    name                   = if ($prop.Value.name) { $prop.Value.name } else { $prop.Name }
+                    email                  = if ($prop.Value.email) { $prop.Value.email } else { "" }
+                
+                    avatar_index           = if ($null -ne $prop.Value.avatar_index) { $prop.Value.avatar_index } else { 0 }
+                    using_default_avatar   = if ($null -ne $prop.Value.using_default_avatar) { $prop.Value.using_default_avatar } else { $true }
+                    using_gaia_avatar      = if ($null -ne $prop.Value.using_gaia_avatar) { $prop.Value.using_gaia_avatar } else { $false }
+                
+                    gaia_name              = if ($prop.Value.gaia_name) { $prop.Value.gaia_name } else { "" }
+                    gaia_given_name        = if ($prop.Value.gaia_given_name) { $prop.Value.gaia_given_name } else { "" }
+                
+                    profile_color_seed     = if ($null -ne $prop.Value.profile_color_seed) { $prop.Value.profile_color_seed } else { 0 }
                 }
             }
         } catch {}
@@ -649,6 +767,12 @@ elseif ($script:mode -eq "import") {
                 $dst = Join-Path $script:chromePath $id
                 Ensure-Dir $dst
 
+                # Generem un Preferences mínim per restaurar
+                # nom, avatar i identitat visual del perfil
+                if ($importMeta[$id]) {
+                    New-MinimalPreferences $importMeta[$id] $dst
+                }
+                
                 # Avatar
                 Copy-Safe (Join-Path $src "Avatars")                    $dst
                 Copy-Safe (Join-Path $src "Google Profile Picture.png") $dst
