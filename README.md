@@ -98,7 +98,7 @@ Si disposes de la versió `.exe`:
 
 👉 Els perfils apareixeran automàticament dins Chrome.
 
-## Eliminar perfils
+### Eliminar perfils
 
 GestionaChrome també permet eliminar perfils de Google Chrome de manera ràpida i centralitzada.
 
