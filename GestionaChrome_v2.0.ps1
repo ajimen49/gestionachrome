@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # GestionaChrome
 # ------------------------------------------------------------------------------
 # - Local State: merge MÍNIM a la importació (name, user_name, last_used)
@@ -587,15 +587,15 @@ if ($script:mode -eq "export") {
     $btnNone.Add_Click({ Set-GridAll $grid $false })
 
     $progress          = New-Object Windows.Forms.ProgressBar
-    $progress.Location = New-Object Drawing.Point(20,345)
+    $progress.Location = New-Object Drawing.Point(20,370)
     $progress.Size     = New-Object Drawing.Size(820,20)
 
     $lbl          = New-Object Windows.Forms.Label
-    $lbl.Location = New-Object Drawing.Point(20,375)
+    $lbl.Location = New-Object Drawing.Point(20,400)
     $lbl.Size     = New-Object Drawing.Size(820,20)
 
     $btn          = New-ActionButton "EXPORTAR" $colorVerd
-    $btn.Location = New-Object Drawing.Point(340,420)
+    $btn.Location = New-Object Drawing.Point(340,450)
 
     $btn.Add_Click({
         $grid.EndEdit()
@@ -828,15 +828,15 @@ elseif ($script:mode -eq "import") {
     $btnNone.Add_Click({ Set-GridAll $grid $false })
 
     $progress          = New-Object Windows.Forms.ProgressBar
-    $progress.Location = New-Object Drawing.Point(20,345)
+    $progress.Location = New-Object Drawing.Point(20,370)
     $progress.Size     = New-Object Drawing.Size(820,20)
 
     $lbl          = New-Object Windows.Forms.Label
-    $lbl.Location = New-Object Drawing.Point(20,375)
+    $lbl.Location = New-Object Drawing.Point(20,400)
     $lbl.Size     = New-Object Drawing.Size(820,20)
 
     $btn          = New-ActionButton "IMPORTAR" $colorBlau
-    $btn.Location = New-Object Drawing.Point(340,420)
+    $btn.Location = New-Object Drawing.Point(340,450)
 
     $btn.Add_Click({
         $grid.EndEdit()
@@ -986,16 +986,55 @@ elseif ($script:mode -eq "delete") {
         $grid.Rows.Add($id, $false, $name, $email, $true, $true) | Out-Null
     }
 
+# ------------------------------------------------------------
+# BOTONS MARCAR / DESMARCAR
+# ------------------------------------------------------------
+
+$btnAll = New-Object Windows.Forms.Button
+$btnAll.Text = "Marcar tots"
+$btnAll.Size = New-Object Drawing.Size(140,35)
+$btnAll.Location = New-Object Drawing.Point(20,320)
+
+# ESTIL
+$btnAll.FlatStyle = "Flat"
+$btnAll.BackColor = [Drawing.Color]::WhiteSmoke
+
+$btnAll.Add_Click({
+
+    foreach ($r in $grid.Rows) {
+
+        if (-not $r.Cells["PERFIL"].ReadOnly) {
+            $r.Cells["PERFIL"].Value = $true
+        }
+    }
+})
+
+$btnNone = New-Object Windows.Forms.Button
+$btnNone.Text = "Desmarcar tots"
+$btnNone.Size = New-Object Drawing.Size(140,35)
+$btnNone.Location = New-Object Drawing.Point(170,320)
+
+# ESTIL
+$btnNone.FlatStyle = "Flat"
+$btnNone.BackColor = [Drawing.Color]::WhiteSmoke
+
+$btnNone.Add_Click({
+
+    foreach ($r in $grid.Rows) {
+        $r.Cells["PERFIL"].Value = $false
+    }
+})
+
     $progress = New-Object Windows.Forms.ProgressBar
-    $progress.Location = New-Object Drawing.Point(20,345)
+    $progress.Location = New-Object Drawing.Point(20,370)
     $progress.Size     = New-Object Drawing.Size(820,20)
 
     $lbl = New-Object Windows.Forms.Label
-    $lbl.Location = New-Object Drawing.Point(20,375)
+    $lbl.Location = New-Object Drawing.Point(20,400)
     $lbl.Size     = New-Object Drawing.Size(820,20)
 
     $btn = New-ActionButton "ELIMINAR" $colorVermell
-    $btn.Location = New-Object Drawing.Point(340,420)
+    $btn.Location = New-Object Drawing.Point(340,450)
 
     $btn.Add_Click({
 
@@ -1098,6 +1137,13 @@ elseif ($script:mode -eq "delete") {
         }
     })
 
-    $form.Controls.AddRange(@($grid,$progress,$lbl,$btn))
+    $form.Controls.AddRange(@(
+    $grid,
+    $btnAll,
+    $btnNone,
+    $progress,
+    $lbl,
+    $btn
+))
     $form.ShowDialog() | Out-Null
 }
