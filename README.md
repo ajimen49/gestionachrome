@@ -1,4 +1,4 @@
-# ExportaChrome
+# GestionaChrome
 
 Eina senzilla per exportar i importar perfils de Google Chrome entre ordinadors.
 
@@ -14,7 +14,7 @@ Sense complicacions tècniques ni configuracions avançades.
 
 ## 🧩 Què fa exactament?
 
-ExportaChrome permet:
+GestionaChrome permet:
 
 - Exportar perfils seleccionats de Chrome a un fitxer `.zip`.
 - Importar aquests perfils en un altre ordinador.
@@ -38,7 +38,7 @@ Tens dues opcions, segons el teu nivell i preferència:
 
 1. Descarrega el `.zip`.
 2. Descomprimeix-lo.
-3. Executa el fitxer `ExportaChrome.bat`.
+3. Executa el fitxer `GestionaChrome.bat`.
 
 Aquest fitxer:
 - Executa l’aplicació automàticament.
@@ -127,8 +127,8 @@ Aquesta eina prioritza l’estabilitat i compatibilitat. Per això:
 
 El paquet inclou:
 
-- **`ExportaChrome.ps1`** → Aplicació principal.
-- **`ExportaChrome.bat`** → Llançador automàtic.
+- **`GestionaChrome.ps1`** → Aplicació principal.
+- **`GestionaChrome.bat`** → Llançador automàtic.
 
 El `.bat` executa PowerShell amb permisos suficients per evitar bloquejos habituals.
 
@@ -136,7 +136,7 @@ El `.bat` executa PowerShell amb permisos suficients per evitar bloquejos habitu
 
 ## 📌 Resum
 
-ExportaChrome és una eina:
+GestionaChrome és una eina:
 - Pràctica
 - Directa
 - Pensada per funcionar sense complicacions
