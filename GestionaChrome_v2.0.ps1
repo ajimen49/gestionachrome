@@ -1,14 +1,5 @@
 # ==============================================================================
-# GestionaChrome
-# ------------------------------------------------------------------------------
-# - Local State: merge MÍNIM a la importació (name, user_name, last_used)
-#   perquè Chrome reconegui els perfils al PC de destí. Sense copiar
-#   configuració d'extensions ni preferències.
-# - Fix: CurrentCellDirtyStateChanged usa param($sender,$e)
-# - Fix: Test-ZipValid neteja temporal al finally
-# - Fix: Favicons sense duplicació
-# - Fix: Copy-Safe avisa si no pot copiar després de 3 intents
-# - Fix: Copy-BookmarksSafeExport simplificada
+# GestionaChrome v2.0
 # ==============================================================================
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -85,6 +76,58 @@ function Copy-BookmarksSafe($srcProfile, $dstProfile) {
     } elseif (Test-Path $bBak) {
         Ensure-Dir $dstProfile
         Copy-Item -Path $bBak -Destination (Join-Path $dstProfile "Bookmarks") -Force
+    }
+}
+
+# Copia el Preferences del ZIP i neteja només extensions NO relacionades amb avatar
+# FORÇAR aplicació d'avatar: estableix using_default_avatar = false si hi ha avatar personalitzat
+function Copy-PreferencesSafe($srcProfilePath, $dstProfilePath) {
+    $srcPref = Join-Path $srcProfilePath "Preferences"
+    $dstPref = Join-Path $dstProfilePath "Preferences"
+
+    if (-not (Test-Path $srcPref)) { return }
+
+    try {
+        $pref = Get-Content $srcPref -Raw -Encoding UTF8 | ConvertFrom-Json
+
+        # Neteja NOMÉS les extensions instal·lades (poden causar problemes entre màquines)
+        # PERÒ preserva configuració d'UI, tema i avatar que pot estar dins extensions.settings
+        if ($pref.PSObject.Properties["extensions"]) {
+            # Guardem configuració d'UI si existeix
+            $uiSettings = $null
+            if ($pref.extensions.PSObject.Properties["settings"]) {
+                $uiSettings = $pref.extensions.settings
+            }
+            
+            # Buidem extensions
+            $pref.extensions = [PSCustomObject]@{}
+            
+            # Restaurem configuració d'UI
+            if ($uiSettings) {
+                $pref.extensions | Add-Member -MemberType NoteProperty -Name "settings" -Value $uiSettings
+            }
+        }
+
+        # FORÇAR aplicació d'avatar personalitzat
+        if ($pref.PSObject.Properties["profile"]) {
+            # Si hi ha avatar de Google (Gaia), forcem que s'usi
+            if ($pref.profile.PSObject.Properties["using_gaia_avatar"] -and $pref.profile.using_gaia_avatar) {
+                $pref.profile.using_default_avatar = $false
+                $pref.profile.is_using_default_name = $false
+            }
+            # Si NO usa avatar de Google però té avatar_index diferent de 0, és un avatar personalitzat
+            elseif ($pref.profile.PSObject.Properties["avatar_index"] -and $pref.profile.avatar_index -ne 0) {
+                $pref.profile.using_default_avatar = $false
+                $pref.profile.is_using_default_name = $false
+            }
+        }
+
+        Ensure-Dir (Split-Path $dstPref)
+        $pref | ConvertTo-Json -Depth 100 | Set-Content $dstPref -Encoding UTF8
+    } catch {
+        # Si falla el parse, copia el fitxer tal qual
+        Write-Warning "No s'ha pogut processar Preferences de $srcProfilePath, copiant tal qual"
+        Copy-Safe $srcPref $dstProfilePath
     }
 }
 
@@ -340,36 +383,6 @@ function Merge-LocalStateMinim($importedMetaMap, $selectedIds, $destChromePath) 
     }
 }
 
-# Genera un Preferences mínim i segur
-# sense extensions ni configuracions problemàtiques
-function New-MinimalPreferences($meta, $destProfilePath) {
-
-    $prefObj = @{
-        profile = @{
-            name                   = $meta.name
-            avatar_index           = $meta.avatar_index
-            using_default_avatar   = $meta.using_default_avatar
-            using_gaia_avatar      = $meta.using_gaia_avatar
-            gaia_name              = $meta.gaia_name
-            gaia_given_name        = $meta.gaia_given_name
-            profile_color_seed     = $meta.profile_color_seed
-        }
-    }
-
-    $prefPath = Join-Path $destProfilePath "Preferences"
-
-    try {
-
-        $prefObj |
-            ConvertTo-Json -Depth 10 |
-            Set-Content $prefPath -Encoding UTF8
-
-    } catch {
-
-        Write-Warning "No s'ha pogut generar Preferences per: $destProfilePath"
-    }
-}
-
 # Valida el ZIP: ha de tenir almenys un perfil amb dades reconegudes.
 # El temporal es neteja SEMPRE al finally.
 function Test-ZipValid($zipPath, $tempDest) {
@@ -527,7 +540,7 @@ function New-ActionButton($text, $color) {
 $script:mode = $null
 
 $launcher = New-Object Windows.Forms.Form
-$launcher.Text            = "GestionaChrome v2.0"
+$launcher.Text            = "GestionaChrome v2.1"
 $launcher.Size            = New-Object Drawing.Size(460,390)
 $launcher.StartPosition   = "CenterScreen"
 $launcher.FormBorderStyle = "FixedDialog"
@@ -680,11 +693,16 @@ if ($script:mode -eq "export") {
                 $dst = Join-Path $script:tempExport $id
                 Ensure-Dir $dst
 
-                # Avatar (no porta extensions)
-                Copy-Safe (Join-Path $src "Avatars")                    $dst
-                Copy-Safe (Join-Path $src "Google Profile Picture.png") $dst
-				Copy-Safe (Join-Path $src "Profile Picture.png") $dst
-				Copy-Safe (Join-Path $src "Profile Picture") $dst
+                # Preferences (preserva avatar i configuració visual)
+                Copy-Safe (Join-Path $src "Preferences") $dst
+
+                # Avatar - totes les variants possibles
+                Copy-Safe (Join-Path $src "Avatars")                      $dst
+                Copy-Safe (Join-Path $src "Google Profile Picture.png")   $dst
+                Copy-Safe (Join-Path $src "Profile Picture.png")          $dst
+                Copy-Safe (Join-Path $src "Profile Picture")              $dst
+                Copy-Safe (Join-Path $src "GAI Profile Picture.png")     $dst
+                Copy-Safe (Join-Path $src "GAIA Picture.png")             $dst
 
                 if ([bool]$row.Cells["PREF"].Value) {
                     Copy-BookmarksSafe $src $dst
@@ -749,9 +767,23 @@ elseif ($script:mode -eq "import") {
 
     if (-not (Check-Chrome)) { exit }
 
+    # Finestra placeholder per evitar que el diàleg de fitxer minimitzi l'aplicació
+    $placeholder = New-Object Windows.Forms.Form
+    $placeholder.Size = New-Object Drawing.Size(1,1)
+    $placeholder.StartPosition = "Manual"
+    $placeholder.Location = New-Object Drawing.Point(-10000,-10000)
+    $placeholder.ShowInTaskbar = $false
+    $placeholder.TopMost = $true
+    $placeholder.Show()
+
     $ofd = New-Object System.Windows.Forms.OpenFileDialog
     $ofd.Filter = "Zip (*.zip)|*.zip"
-    if ($ofd.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { exit }
+    $result = $ofd.ShowDialog($placeholder)
+    
+    $placeholder.Close()
+    $placeholder.Dispose()
+
+    if ($result -ne [System.Windows.Forms.DialogResult]::OK) { exit }
 
     # Validació (neteja el temp al finally intern)
     if (-not (Test-ZipValid $ofd.FileName $script:tempImport)) {
@@ -805,6 +837,8 @@ elseif ($script:mode -eq "import") {
     $form.Size          = New-Object Drawing.Size(880,580)
     $form.StartPosition = "CenterScreen"
     $form.Font          = New-Object System.Drawing.Font("Segoe UI",10)
+    $form.TopMost       = $true
+    $form.Add_Shown({ $form.Activate() })
 
     $grid = New-ProfileGrid
 
@@ -903,17 +937,16 @@ elseif ($script:mode -eq "import") {
                 $dst = Join-Path $script:chromePath $id
                 Ensure-Dir $dst
 
-                # Generem un Preferences mínim per restaurar
-                # nom, avatar i identitat visual del perfil
-                if ($importMeta[$id]) {
-                    New-MinimalPreferences $importMeta[$id] $dst
-                }
+                # Preferences: copia l'original del ZIP i neteja només extensions
+                Copy-PreferencesSafe $src $dst
                 
-                # Avatar
-                Copy-Safe (Join-Path $src "Avatars")                    $dst
-                Copy-Safe (Join-Path $src "Google Profile Picture.png") $dst
-				Copy-Safe (Join-Path $src "Profile Picture.png") $dst
-				Copy-Safe (Join-Path $src "Profile Picture") $dst
+                # Avatar - totes les variants possibles
+                Copy-Safe (Join-Path $src "Avatars")                      $dst
+                Copy-Safe (Join-Path $src "Google Profile Picture.png")   $dst
+                Copy-Safe (Join-Path $src "Profile Picture.png")          $dst
+                Copy-Safe (Join-Path $src "Profile Picture")              $dst
+                Copy-Safe (Join-Path $src "GAIA Picture.png")             $dst
+                Copy-Safe (Join-Path $src "GAI Profile Picture.png")     $dst
 
                 if ([bool]$row.Cells["PREF"].Value) {
                     Copy-Safe (Join-Path $src "Bookmarks")        $dst
