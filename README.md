@@ -41,9 +41,9 @@ GestionaChrome és una utilitat gràfica per a Windows que permet exportar, impo
 
 És el mètode més compatible amb entorns corporatius i educatius, ja que no genera alertes d'antivirus.
 
-1. Descarrega el fitxer `GestionaChrome.zip` de la secció [Releases](../../releases/latest)
+1. Descarrega el fitxer `GestionaChrome_v2.5.zip` de la secció [Releases](../../releases/latest)
 2. Extreu el contingut en qualsevol carpeta (per exemple, l'Escriptori)
-3. Fes doble clic a **`GestionaChrome.bat`**
+3. Fes doble clic a **`GestionaChrome_v2.5.bat`**
 4. Si Windows mostra un avís de seguretat, fes clic a "Més informació" → "Executa igualment"
 
 > El fitxer `.bat` obre PowerShell en mode bypass automàticament. No cal canviar cap configuració del sistema.
@@ -52,7 +52,7 @@ GestionaChrome és una utilitat gràfica per a Windows que permet exportar, impo
 
 Més còmode d'executar però pot ser bloquejat per alguns antivirus corporatius (Windows Defender, CrowdStrike, etc.).
 
-1. Descarrega el fitxer `GestionaChrome.exe` de la secció [Releases](../../releases/latest)
+1. Descarrega el fitxer `GestionaChrome_v2.5.exe` de la secció [Releases](../../releases/latest)
 2. Fes doble clic per executar-lo
 3. Si l'antivirus el bloqueja, utilitza el Mètode 1
 
