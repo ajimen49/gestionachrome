@@ -96,19 +96,19 @@ Més còmode d'executar però pot ser bloquejat per alguns antivirus corporatius
 
 ## Preguntes freqüents
 
-**Cal tancar Chrome abans d'usar l'eina?**
+- **Cal tancar Chrome abans d'usar l'eina?**
 Sí. GestionaChrome ho detecta automàticament i ofereix tancar-lo.
 
-**Puc importar en un Chrome que ja té perfils configurats?**
+- **Puc importar en un Chrome que ja té perfils configurats?**
 Sí. L'eina fa un merge selectiu: afegeix els perfils nous sense modificar els que ja existeixen.
 
-**Funcionarà si l'ordinador nou té una versió diferent de Chrome?**
+- **Funcionarà si l'ordinador nou té una versió diferent de Chrome?**
 Sí, sempre que sigui una versió igual o superior a la de l'ordinador antic.
 
-**El fitxer `.ps1` mostra un avís de seguretat en fer doble clic.**
+- **El fitxer `.ps1` mostra un avís de seguretat en fer doble clic.**
 És normal quan el fitxer s'ha descarregat d'Internet. Solució: clic dret → Propietats → marcar "Desbloqueja" → Acceptar. O bé usar sempre el `.bat` inclòs al ZIP, que no requereix aquest pas.
 
-**Per què no s'inclouen les contrasenyes?**
+- **Per què no s'inclouen les contrasenyes?**
 Les contrasenyes de Chrome estan xifrades per Windows amb DPAPI, un sistema lligat al compte i la màquina concreta. Copiar-les a un altre ordinador fa que Chrome no les pugui desxifrar. La manera correcta de recuperar-les és iniciar sessió a Chrome amb el compte de Google, que les sincronitza automàticament.
 
 ---
