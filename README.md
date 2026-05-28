@@ -54,7 +54,7 @@ Més còmode d'executar però pot ser bloquejat per alguns antivirus corporatius
 
 1. Descarrega el fitxer `GestionaChrome_v2.5.exe` de la secció [Releases](../../releases/latest)
 2. Fes doble clic per executar-lo
-3. Si l'antivirus el bloqueja, utilitza el Mètode 1
+3. Si l'antivirus el bloqueja, tria la opció `Més informació` i després `Execeuta-la de totes maneres`.
 
 > L'executable és l'script PowerShell compilat amb PS2EXE. El codi font és públic i auditable en aquest repositori.
 
